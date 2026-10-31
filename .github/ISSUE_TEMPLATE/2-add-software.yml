@@ -1,0 +1,39 @@
+name: Add software to the presets
+description: A dictation app / engine you want other people to be able to measure
+title: "[preset] "
+labels: ["preset"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Software name and version
+      placeholder: e.g. Handy 0.9.8, WhisperKit CLI 1.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: howto
+    attributes:
+      label: How does it expose transcription?
+      options:
+        - OpenAI-compatible HTTP endpoint
+        - CLI that prints the transcript
+        - CLI that prints JSON (ideally with a repeat flag)
+        - Only a GUI, but a command can drive it
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: The config that works
+      description: A working [[engines]] block plus how to start it, if you have one.
+      render: toml
+  - type: checkboxes
+    id: caps
+    attributes:
+      label: Which capabilities have you actually seen it do?
+      options:
+        - label: shows words while you speak
+        - label: stays resident between phrases
+        - label: custom vocabulary
+        - label: works offline

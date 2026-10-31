@@ -1,0 +1,46 @@
+name: A number looks wrong
+description: Accuracy, latency or a capability claim that does not match what you see
+title: "[correctness] "
+labels: ["correctness"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks — a benchmark that misleads is worse than none, so this matters more than
+        a crash. `results/results.json` makes this fast to investigate.
+  - type: textarea
+    id: what
+    attributes:
+      label: What does the report say?
+      description: Paste the table row or section.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What do you think it should say, and why?
+    validations:
+      required: true
+  - type: input
+    id: engine
+    attributes:
+      label: Which software was it measuring?
+      placeholder: e.g. Handy 0.9.8 (json-cli), whisper.cpp server, my custom wrapper
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: dictation-bench version
+      placeholder: output of `dictation-bench --version`
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you run it?
+      options: [pip install, git clone + PYTHONPATH=src, other]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Anything else
+      description: Console output, the relevant bench.toml entry, results.json (redact anything personal).

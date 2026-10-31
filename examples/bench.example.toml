@@ -1,0 +1,38 @@
+# Copy to bench.toml at the repo root (or run `dictation-bench init`).
+# Each [[engines]] block is one piece of software to measure.
+# Full guide: docs/adding-an-engine.md
+
+# --- a resident server: no model reload between phrases ---------------------
+[[engines]]
+name = "NeMo-Speech (Parakeet TDT v3)"
+type = "http"
+url = "http://127.0.0.1:50060/v1/audio/transcriptions"
+capabilities = { service = true, offline = true }
+notes = "nemo-speech serve --asr-model parakeet-tdt --host 127.0.0.1 --port 50060 --no-ui"
+
+# --- a process-per-call CLI: honest cold start ------------------------------
+[[engines]]
+name = "whisper.cpp (base.en)"
+type = "cli"
+command = "whisper-cli -m models/ggml-base.en.bin -nt -f {wav}"
+capabilities = { offline = true }
+
+# --- a GUI app with a hidden headless batch mode ----------------------------
+[[engines]]
+name = "Handy (batch)"
+type = "json-cli"
+command = ["/Applications/Handy.app/Contents/MacOS/Handy", "-f", "{wav}",
+           "--model", "{model}", "--json", "--repeat", "{repeat}"]
+model = "parakeet-tdt-0.6b-v3"
+json_text_key = "text"
+json_load_key = "load_ms"
+json_infer_key = "transcribe_ms"
+repeat = 3
+capabilities = { offline = true }
+
+# --- anything else ----------------------------------------------------------
+[[engines]]
+name = "My wrapper"
+type = "custom"
+command = "my-transcriber --input {wav}"
+notes = "Unverified wrapper; treat the numbers as mine."
