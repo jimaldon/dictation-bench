@@ -189,7 +189,8 @@ that happens.
 
 The most useful contributions, in order: a preset for software you actually use, especially the GUI
 apps people are choosing between; real recordings with their exact text, which is the scarcest input
-in speech recognition; and normaliser rules with a test that shows what they change.
+in speech recognition; and normaliser rules with a test that shows what they change. Details are in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 <details>
 <summary>Development</summary>

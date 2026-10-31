@@ -40,6 +40,9 @@ class EngineRun:
     cold_clip: str = ""
     #: Wall time of that first attempt (0 when no cold measurement was made).
     cold_s: float = 0.0
+    #: Timing of the two probe calls, kept apart from capability claims.
+    warm_probe_s: float = 0.0
+    cold_probe_s: float = 0.0
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -52,6 +55,8 @@ class EngineRun:
             "retries": self.retries,
             "cold_clip": self.cold_clip,
             "cold_s": self.cold_s,
+            "warm_probe_s": self.warm_probe_s,
+            "cold_probe_s": self.cold_probe_s,
             "results": {
                 k: {"text": v.text, "ok": v.ok, "error": v.error,
                     "wall_s": v.wall_s, "load_s": v.load_s,
@@ -67,7 +72,8 @@ def machine_info() -> dict[str, Any]:
         "machine": platform.machine(),
         "processor": platform.processor() or "",
         "python": platform.python_version(),
-        "hostname": platform.node(),
+        # No hostname: results.json is meant to be shareable, and a machine name
+        # identifies a person's setup more than it helps compare hardware.
         "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }
     try:
@@ -151,9 +157,8 @@ def run_engine(
         time.sleep(0.7)
         warm_probe = adapter.transcribe(warm_clip.wav, cold=False)
         if warm_probe.ok and warm_probe.wall_s > 0:
-            run.capabilities = dict(run.capabilities)
-            run.capabilities["_warm_probe_s"] = warm_probe.wall_s  # type: ignore[assignment]
-            run.capabilities["_cold_probe_s"] = cold_result.wall_s  # type: ignore[assignment]
+            run.warm_probe_s = warm_probe.wall_s
+            run.cold_probe_s = cold_result.wall_s
 
     for clip in clips:
         if clip.name == cold_clip.name:

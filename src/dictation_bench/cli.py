@@ -226,7 +226,9 @@ def cmd_bench(args: argparse.Namespace) -> int:
     (out_dir / "report.md").write_text(md, encoding="utf-8")
     raw = {
         "machine": machine_info(),
-        "corpus": str(corpus.root),
+        # Relative to the working directory: an absolute path in a shared
+        # results file reveals the user's directory layout.
+        "corpus": _display_path(corpus.root),
         "engines": [e.as_dict() for e in runs],
     }
     (out_dir / "results.json").write_text(json.dumps(raw, indent=2), encoding="utf-8")
@@ -242,6 +244,20 @@ def cmd_bench(args: argparse.Namespace) -> int:
         subprocess.run(["open" if sys.platform == "darwin" else "xdg-open",
                         str(out_dir / "report.md")])
     return 0
+
+
+def _display_path(path: Path) -> str:
+    """Shorten a path for output: relative to cwd, or the home-relative form."""
+    try:
+        return str(path.resolve().relative_to(Path.cwd().resolve()))
+    except ValueError:
+        pass
+    home = Path.home()
+    try:
+        rel = path.resolve().relative_to(home)
+        return f"~/{rel}"
+    except ValueError:
+        return str(path)
 
 
 def _json_specs(raw: str) -> list[dict]:
