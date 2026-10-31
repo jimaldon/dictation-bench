@@ -15,3 +15,7 @@ corpus/
 !corpus/.gitkeep
 
 .DS_Store
+
+# uv creates this on `uv run`; this is a library with loose deps, so it is not
+# pinned in-repo (CI installs from pyproject.toml).
+uv.lock
