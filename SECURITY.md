@@ -14,10 +14,10 @@ What we do keep safe:
 
 ## Reporting a problem
 
-If you find a way this tool **misreports** results — a scoring bug that flips a ranking, a
-capability claim the code makes that the software does not have, a preset that is silently
-wrong — that is a correctness bug and we want it. Open an issue with the `correctness` label
-and include `results/results.json` from the run if you can.
+A way this tool **misreports** results is a correctness bug and the most useful kind of report:
+a scoring bug that flips a ranking, a capability claim the code makes that the software does not
+have, a preset that is silently wrong. Open an issue with the `correctness` label and include
+`results/results.json` from the run if you can.
 
 For anything that would leak transcripts or recordings from someone else's machine, please
 report privately via GitHub Security Advisories rather than a public issue.
