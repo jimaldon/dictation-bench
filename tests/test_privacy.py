@@ -12,7 +12,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 from dictation_bench.runner import machine_info
 
 REPO = Path(__file__).resolve().parent.parent
