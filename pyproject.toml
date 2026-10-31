@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dictation-bench"
+version = "0.1.0"
+description = "Benchmark local dictation and speech-to-text software on your own machine, and get a table you can actually decide with."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Jim Aldon", url = "https://github.com/jimaldon" }]
+keywords = [
+  "dictation", "speech-to-text", "voice-to-text", "asr", "whisper", "parakeet",
+  "benchmark", "local", "offline", "macos",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+dependencies = [
+  # TOML parsing for bench.toml; stdlib tomllib only exists on 3.11+
+  'tomli>=2.0; python_version < "3.11"',
+]
+
+[project.optional-dependencies]
+# Recreates the Whisper-style scorer exactly; without it the "whisper" column
+# falls back to the basic scorer and the report says so.
+normalize = ["whisper-normalizer>=0.1.2"]
+dev = ["pytest>=7", "whisper-normalizer>=0.1.2"]
+
+[project.scripts]
+dictation-bench = "dictation_bench.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dictation_bench"]
+
+# The 3.5 MB reference corpus travels with the package so `pip install` users
+# can benchmark with no setup step.
+[tool.hatch.build.targets.wheel.force-include]
+"testdata/reference" = "dictation_bench/data/reference"
+"scripts/dictbench-ptt" = "dictation_bench/data/dictbench-ptt"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

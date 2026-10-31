@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# dictbench-ptt — tap-to-toggle dictation against a resident local ASR server.
+#
+# Two taps of the same hotkey: the first beeps and records, the second stops,
+# transcribes and pastes into whatever app has focus. The model stays loaded in
+# the server, so a phrase costs one inference, not a model load.
+#
+# Designed to be driven by *your* hotkey daemon (skhd, skhd-like, Hammerspoon,
+# a desktop-environment shortcut, or a stream deck macro) rather than owning
+# the keyboard itself:
+#
+#     bind = alt - f19 : ~/.local/bin/dictbench-ptt toggle
+#
+# Environment (all optional):
+#   DICTBENCH_URL      server base URL        default http://127.0.0.1:50060
+#   DICTBENCH_FIELD    extra multipart field  e.g. 'automatic_punctuation=true'
+#   DICTBENCH_AGENT    launchctl label to kickstart if the server is down
+#   DICTBENCH_STATE    state directory        default ${TMPDIR:-/tmp}/dictbench-ptt-$UID
+#   DICTBENCH_NO_PASTE set to 1 to only copy to the clipboard, never paste
+#
+# Requires: sox, curl, jq (and, on macOS, afplay/osascript/pbcopy which exist).
+set -euo pipefail
+
+SERVER="${DICTBENCH_URL:-http://127.0.0.1:50060}"
+AGENT="${DICTBENCH_AGENT:-}"
+EXTRA_FIELD="${DICTBENCH_FIELD:-}"
+STATE_DIR="${DICTBENCH_STATE:-${TMPDIR:-/tmp}/dictbench-ptt-${UID}}"
+PID_FILE="$STATE_DIR/sox.pid"
+WAV_FILE="$STATE_DIR/recording.wav"
+LOG_FILE="$STATE_DIR/log"
+KICKSTART_TRIES="${DICTBENCH_KICKSTART_TRIES:-80}"   # × 0.25 s
+
+# launchd gives children a minimal PATH; find the tools explicitly.
+for bin in sox curl jq; do
+    command -v "$bin" >/dev/null || { echo "dictbench-ptt: missing $bin" >&2; exit 1; }
+done
+
+mkdir -p "$STATE_DIR"
+
+log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" >>"$LOG_FILE"; }
+notify() {
+    if command -v osascript >/dev/null; then
+        osascript -e "display notification \"${1//\"/\\\"}\" with title \"${2:-dictation}\"" 2>/dev/null || true
+    fi
+}
+beep() {
+    # A fresh player per tap costs ~0.3 s and is sometimes ~0.85 s on macOS
+    # while CoreAudio starts up. It is feedback, not part of the transcription
+    # path, so it runs in the background and never blocks.
+    command -v afplay >/dev/null || return 0
+    case "${1:-}" in
+        start) afplay /System/Library/Sounds/Tink.aiff >/dev/null 2>&1 & ;;
+        stop)  afplay /System/Library/Sounds/Pop.aiff  >/dev/null 2>&1 & ;;
+        error) afplay /System/Library/Sounds/Funk.aiff >/dev/null 2>&1 & ;;
+    esac
+}
+
+is_recording() { [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; }
+server_up() { curl -sS --max-time 2 "$SERVER/health" >/dev/null 2>&1 \
+              || curl -sS --max-time 2 "$SERVER/v1/models" >/dev/null 2>&1; }
+
+ensure_server() {
+    server_up && return 0
+    [[ -n "$AGENT" ]] || return 1
+    log "health check failed; kickstarting $AGENT"
+    launchctl kickstart -k "gui/$UID/$AGENT" >>"$LOG_FILE" 2>&1 || true
+    for _ in $(seq 1 "$KICKSTART_TRIES"); do
+        server_up && return 0
+        sleep 0.25
+    done
+    return 1
+}
+
+cmd_start() {
+    if is_recording; then log "start: already recording"; return 0; fi
+    log "start"
+    # -b 16 matters: CoreAudio can hand sox 32-bit samples, and some ASR
+    # servers reject 32-bit WAV with "unsupported WAV encoding".
+    nohup sox -q -d -r 16000 -c 1 -b 16 "$WAV_FILE" >>"$LOG_FILE" 2>&1 &
+    echo $! >"$PID_FILE"
+    beep start
+}
+
+cmd_stop() {
+    [[ -f "$PID_FILE" ]] || { log "stop: no pid"; return 0; }
+    local pid; pid=$(cat "$PID_FILE"); rm -f "$PID_FILE"
+
+    # SIGINT lets sox flush the WAV header; SIGTERM can corrupt it.
+    kill -INT "$pid" 2>/dev/null || true
+    for _ in $(seq 1 10); do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+    beep stop
+
+    if [[ ! -s "$WAV_FILE" ]]; then
+        log "stop: empty WAV (microphone permission?)"
+        beep error; notify "No audio — check microphone permission"
+        return 1
+    fi
+
+    if ! ensure_server; then
+        log "stop: server unavailable"; beep error; notify "Dictation server unavailable"
+        return 1
+    fi
+
+    local response transcript
+    local -a form=(-F "file=@${WAV_FILE}")
+    [[ -n "$EXTRA_FIELD" ]] && form+=(-F "$EXTRA_FIELD")
+    response=$(curl -sS --max-time 120 -X POST \
+        "$SERVER/v1/audio/transcriptions" "${form[@]}" 2>>"$LOG_FILE")
+
+    transcript=$(printf '%s' "$response" | jq -r '.text // .transcript // empty' 2>/dev/null \
+        | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    if [[ -z "$transcript" ]]; then
+        log "stop: empty transcript; server said: $(printf '%s' "$response" | head -c 200)"
+        beep error; notify "Empty transcript"
+        return 1
+    fi
+
+    if command -v pbcopy >/dev/null; then
+        printf '%s' "$transcript" | pbcopy
+    elif command -v wl-copy >/dev/null; then
+        printf '%s' "$transcript" | wl-copy
+    else
+        printf '%s' "$transcript" | xclip -selection clipboard
+    fi
+    log "stop: copied \"$transcript\""
+
+    if [[ "${DICTBENCH_NO_PASTE:-0}" != "1" ]]; then
+        if command -v osascript >/dev/null; then
+            # Needs Accessibility permission for the process that launched the
+            # hotkey daemon. If it silently no-ops, the text is still on the
+            # clipboard — Cmd-V by hand.
+            osascript -e 'tell application "System Events" to keystroke "v" using command down' 2>/dev/null || true
+        elif command -v wtype >/dev/null; then
+            wtype "$transcript" || true
+        fi
+    fi
+    notify "$transcript"
+}
+
+cmd_toggle() { if is_recording; then cmd_stop; else cmd_start; fi; }
+
+case "${1:-}" in
+    toggle) cmd_toggle ;;
+    start)  cmd_start ;;
+    stop)   cmd_stop ;;
+    status) is_recording && echo "recording (pid=$(cat "$PID_FILE"))" || echo idle ;;
+    log)    tail -30 "$LOG_FILE" 2>/dev/null || echo "(no log yet)" ;;
+    ping)   if server_up; then echo "server up"; else echo "server down"; exit 1; fi ;;
+    *) echo "usage: dictbench-ptt {toggle|start|stop|status|log|ping}" >&2; exit 1 ;;
+esac

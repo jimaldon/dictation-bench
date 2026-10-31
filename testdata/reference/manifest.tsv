@@ -1,0 +1,29 @@
+# clip	group	reference text	wav
+m01	main	the quick brown fox jumps over the lazy dog	m01.wav
+m02	main	please refactor the authentication middleware and add unit tests	m02.wav
+m03	main	can you explain how the cache aware streaming encoder reuses hidden states across chunks	m03.wav
+m04	main	Nemotron and Parakeet are speech recognition models from Nvidia	m04.wav
+m05	main	Alacritty is a gpu accelerated terminal emulator written in rust	m05.wav
+m06	main	WhisperKit runs the encoder on the apple neural engine to save battery	m06.wav
+m08	main	summarize the last commit and list any files that changed in the pull request	m08.wav
+m09	main	schedule a reminder to call the dentist tomorrow morning	m09.wav
+m10	main	the deployment failed because the database migration timed out	m10.wav
+m11	main	please commit these changes and push them to the feature branch	m11.wav
+m12	main	add error handling around the network request and log the response	m12.wav
+m13	main	the accessibility audit found two buttons without labels	m13.wav
+m14	main	run the full test suite before merging the pull request	m14.wav
+m15	main	convert the image to grayscale and resize it before uploading	m15.wav
+m16	main	the server responded with a not found status code	m16.wav
+m17	main	my wifi password contains an uppercase letter and a special symbol	m17.wav
+m18	main	remind me to buy milk eggs and bread on the way home	m18.wav
+m19	main	what is the weather like in san francisco this weekend	m19.wav
+m20	main	the coffee grinder needs a new burr set soon	m20.wav
+m07	numeric	the meeting is scheduled for twenty twenty six at three thirty in the afternoon	m07.wav
+n01	numeric	add three point one four as the value of pi in the constant	n01.wav
+n02	numeric	the invoice total is one thousand two hundred and fifty dollars	n02.wav
+n03	numeric	call me at five forty five in the evening	n03.wav
+n04	numeric	there were ninety nine bottles of beer on the wall	n04.wav
+n05	numeric	the answer to everything is forty two	n05.wav
+L01	long	I want to add a new keyboard shortcut that starts a local speech to text server keeps the model resident in memory and pastes the result into whichever application currently has focus without ever sending any audio off the machine and I also want the text to appear while I am still speaking instead of only after I press the key a second time	L01.wav
+s01	stress	run skhd and check whether the f nineteen key binding still works	s01.wav
+s02	stress	use the c l i to transcribe a wav file and print the text to standard output	s02.wav

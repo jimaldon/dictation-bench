@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Benchmark output — yours to keep, not ours to publish
+results/
+bench.toml
+corpus/
+!corpus/.gitkeep
+
+.DS_Store
