@@ -12,7 +12,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 from dictation_bench.runner import machine_info
 
