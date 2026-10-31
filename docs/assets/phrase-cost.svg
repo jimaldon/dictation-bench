@@ -7,8 +7,8 @@
 <text x="848" y="103" fill="#6e7681" font-size="11" text-anchor="end">2 s+</text>
 <text x="32" y="149" fill="#e6edf3" font-size="14" font-weight="600">NeMo-Speech · Parakeet TDT v3</text>
 <text x="32" y="167" fill="#6e7681" font-size="11.5">resident server</text>
-<rect x="300" y="136" width="18.7" height="17" rx="3" fill="#f0883e"/><text x="326.7" y="149" fill="#f0883e" font-size="12" font-weight="600">151 ms</text>
-<rect x="300" y="158" width="17.6" height="17" rx="3" fill="#3fb950"/><text x="325.6" y="171" fill="#3fb950" font-size="12" font-weight="600">142 ms</text>
+<rect x="300" y="136" width="18.7" height="17" rx="3" fill="#f0883e"/><text x="326.7" y="149" fill="#f0883e" font-size="12" font-weight="600">137 ms</text>
+<rect x="300" y="158" width="17.6" height="17" rx="3" fill="#3fb950"/><text x="325.6" y="171" fill="#3fb950" font-size="12" font-weight="600">146 ms</text>
 <text x="32" y="223" fill="#e6edf3" font-size="14" font-weight="600">Hex 3.0.0 · Parakeet v3</text>
 <text x="32" y="241" fill="#6e7681" font-size="11.5">resident server</text>
 <rect x="300" y="210" width="20.2" height="17" rx="3" fill="#f0883e"/><text x="328.2" y="223" fill="#f0883e" font-size="12" font-weight="600">163 ms</text>

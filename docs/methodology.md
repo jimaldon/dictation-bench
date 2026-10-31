@@ -1,109 +1,113 @@
 # Methodology
 
-This page exists so the numbers can be argued with. If something here is wrong, that is a
-bug — open an issue.
+This page exists so the numbers can be argued with. If something here is wrong, that is a bug, so
+please open an issue.
 
-## 1. What is measured
+## What is measured
 
 | Axis | Definition | Unit |
 |:--|:--|:--|
-| Everyday WER | Word errors / reference words over `main`, `jargon`, `polluted`, `long` groups | % |
-| Group WER | Same, per group (`main`, `numeric`, `stress`, `long`, …) | % |
-| First phrase (cold) | Wall time for the **first** clip, engine not previously used in this run | s |
-| After that (warm) | Median wall time over the remaining clips | s |
+| Everyday WER | Word errors divided by reference words, over the `main`, `jargon`, `polluted` and `long` groups | % |
+| Group WER | Same, per group (`main`, `numeric`, `stress`, `long`, and so on) | % |
+| First phrase | Wall time for the first clip, with the engine not previously used in this run | s |
+| Every phrase after | Median wall time over the remaining clips | s |
 | Failures | Clips that errored or returned nothing | count |
 
-Corpus WER is **total edits over total reference words** — not the mean of per-clip WER.
-A long clip and a short clip do not get equal weight.
+Corpus WER is total edits over total reference words. It is not the mean of per-clip WER, because a
+long clip and a short clip should not carry equal weight.
 
-## 2. Scoring: three normalisers, applied identically
+## Scoring: three normalisers, applied identically
 
-Applied to **both** reference and hypothesis, always:
+Every normaliser is applied to both the reference and the hypothesis:
 
-- `basic` — lowercase, keep `[a-z0-9']`, collapse whitespace.
-  This is what many quick benchmarks do.
-- `whisper` — `basic` plus OpenAI Whisper's `EnglishTextNormalizer` (the normaliser behind
-  most published WER numbers and the Open ASR Leaderboard conventions).
-- `reconciling` — `basic` plus explicit number/format reconciliation:
-  spelled numbers → digits, thousands separators, clock forms, spaced digit runs,
-  single letter + number joins.
+- `basic` lowercases, keeps `[a-z0-9']`, and collapses whitespace. This is what many quick
+  benchmarks do.
+- `whisper` adds OpenAI Whisper's `EnglishTextNormalizer`, which sits behind most published WER
+  numbers and the Open ASR Leaderboard conventions.
+- `reconciling` adds explicit number and format reconciliation: spelled numbers to digits,
+  thousands separators, clock forms, spaced digit runs, and single letter plus number joins.
 
-The report prints all three for every engine. That is deliberate: **the choice of scorer can
-flip rankings**, and most disagreements between published tables come from it.
+The report prints all three for every engine. The choice of scorer can flip a ranking, and much of
+the disagreement between published tables comes from exactly that.
 
-Example from the project's own history — the same engine outputs, scored two ways:
+An example from this project's own history, with the same engine outputs scored two ways:
 
-| Scorer | Engine A (writes digits) | Engine B (writes words) |
+| Scorer | Engine A, writes digits | Engine B, writes words |
 |:--|--:|--:|
-| naive (`basic`) | 9.6% | 3.7% |
+| basic | 9.6% | 3.7% |
 | reconciling | 2.7% | 3.9% |
 
-On the naive scorer, B looks 2.6× better. On the reconciling scorer, A is better. Neither
-engine changed.
+B looks 2.6 times better under the first scorer and worse under the second. Neither engine changed.
 
-## 3. Why raw error counts are printed
+## Why raw error counts are printed
 
-On a 259-word corpus, a "1.9% vs 2.3% WER" result is **5 errors vs 6**. That is one word.
-The report prints:
+On a 259-word corpus, "1.9% versus 2.3% WER" is five errors against six. That is one word. The
+report prints errors, reference words and a 95% range:
 
 ```
 | Engine | Word errors | Reference words | WER (95% range) |
 ```
 
-and states plainly when a gap is one-word territory. Small corpora cannot rank engines that
-are nearly equal — no amount of decimal places fixes that.
+and states when a gap falls into one-word territory. Small corpora cannot rank engines that are
+nearly equal, and more decimal places do not help.
 
-The 95% range is a Wilson interval over word errors. Errors are not independent draws
-(one hard word can cost two edits), so treat it as a sanity check on "is this one word?" —
-not a formal significance test.
+The 95% range is a Wilson interval over word errors. Errors are not independent draws, since one
+hard word can cost two edits, so treat the range as a check on whether a difference is one word
+rather than as a formal significance test.
 
-## 4. Cold vs warm latency
+## Cold and warm latency
 
-- **Cold** = first clip of the run, no prior traffic. For a loaded app this includes process
-  start and model load; for a resident server, first-request warm-up.
-- **Warm** = median of the rest. For a resident server this is what every phrase costs.
+Cold is the first clip of the run with no prior traffic. For a loaded app it includes process start
+and model load. For a resident server it is first-request warm-up.
 
-For process-per-clip CLIs the *warm* number is still not what a user feels in an app that
-loads the model once, and the report says so in "Before you trust this".
+Warm is the median of the remaining clips. For a resident server this is what every phrase costs.
 
-Neither number includes: audio capture, VAD/silence trimming, the hotkey path, the paste
-keystroke, or clipboard handling. Those are app-level and can add tens to hundreds of ms.
+For a process-per-clip CLI the warm number is still not what a user feels in an app that loads the
+model once, and the report says so under "Before you trust this".
 
-## 5. Corpus
+Neither number includes audio capture, voice activity detection, the hotkey path, the paste
+keystroke or clipboard handling. Those are app-level costs that can add tens to hundreds of
+milliseconds.
 
-Bundled reference corpus: 28 clips, 112.8 s, rendered with macOS `say` (Samantha, 170 wpm),
-16 kHz mono PCM16. Text is exact ground truth because it was synthesised.
+## Corpus
+
+The bundled reference corpus has 28 clips and 112.8 s of audio, rendered with macOS `say` (Samantha,
+170 wpm) to 16 kHz mono PCM16. The text is exact ground truth because it was synthesised.
 
 | Group | Clips | Purpose |
 |:--|--:|:--|
-| `main` | 19 | everyday prose — the headline |
-| `numeric` | 6 | numbers, times, money — where engines differ on format |
+| `main` | 19 | everyday prose, the headline |
+| `numeric` | 6 | numbers, times, money, where engines differ on format |
 | `stress` | 2 | acronyms and spelled letters |
-| `long` | 1 | ~20 s utterance for length effects |
-| `jargon` | 5 | technical/proper nouns (part of `main` in the original corpus) |
-| `polluted` | 0–5 | optional: same voice with a second speaker talking over it |
+| `long` | 1 | about 20 s, for length effects |
+| `jargon` | 5 | technical and proper nouns, counted in the headline |
+| `polluted` | 0 to 5 | optional, the same speech with a second speaker over it |
 
-Adding `--pollute` renders background-speech versions, because clean synthetic audio makes
-good models look identical to each other.
+`--pollute` renders background-speech versions, because clean synthetic audio makes good models
+look identical to one another.
 
-`corpus.json` records provenance and SHA-256 per file; `testdata/reference` is byte-identical
-to the corpus the project was developed on.
+`corpus.json` records provenance and a SHA-256 per file. `testdata/reference` is byte-identical to
+the corpus the project was developed on.
 
-## 6. Reproducibility
+## Reproducibility
 
-- The corpus is deterministic **for a given voice and macOS version**. `say` voices changed
-  between major macOS releases — record `corpus.json`, which this project writes.
-- Model versions matter more than engine versions. Record them in `bench.toml` `notes`; the
-  report keeps `results.json` including exact per-clip transcripts.
-- The project never edits `results/`: every run writes a fresh report you can diff.
+The corpus is deterministic for a given voice and macOS version, and `say` voices change between
+major releases, which is why `corpus.json` is written on every render.
 
-## 7. Known biases
+Model versions matter more than engine versions. Record them in `bench.toml` `notes`. Every run
+writes a fresh `results.json` with the exact per-clip transcripts, so two runs can be compared
+without re-running anything.
 
-- **Synthetic speech is easy.** All engines score better than on real speech; gaps can
-  compress. `--from-clip` with your own recording is the corrective.
-- **English only**, by default. Parakeet/Nemotron are multilingual; use a corpus in your
-  language.
-- **Short test items favour models with fixed windows.** Whisper pads to 30 s, so RTFx on
-  2–4 s clips understates its cost on long files (the `long` group exists for that).
-- **One machine.** Thermal state, power mode and other load all move latency by tens of
-  percent. Run comparisons in one session.
+## Known biases
+
+Synthetic speech is easier than real speech, so all engines score better than they would on your
+voice and gaps can compress. Use `--from-clip` with your own recording to correct for it.
+
+The default corpus is English only. Parakeet and Nemotron are multilingual; use a corpus in the
+language you care about.
+
+Short test items favour models with fixed windows. Whisper pads to 30 s, so real-time factor on a
+two-second clip understates its cost on a long file, which is what the `long` group is for.
+
+Latency moves with thermal state, power mode and background load by tens of percent. Run
+comparisons inside one session.

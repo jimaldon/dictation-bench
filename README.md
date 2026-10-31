@@ -2,237 +2,197 @@
 
 <img src="docs/assets/logo.svg" alt="dictation-bench" width="620">
 
-**There are dozens of good dictation apps. Benchmark them on _your_ machine, and pick one.**
+**Benchmark the dictation apps you already have installed, on your own machine.**
 
 [![CI](https://github.com/jimaldon/dictation-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/jimaldon/dictation-bench/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/macOS%20·%20Linux-supported-lightgrey)](#-quick-start)
+[![Platform](https://img.shields.io/badge/macOS%20and%20Linux-supported-lightgrey)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![No telemetry](https://img.shields.io/badge/telemetry-none-blueviolet)](#privacy)
 
-[**Quick start**](#-quick-start) · [**A real example**](#️-an-example-what-it-produced-on-one-laptop) · [**Add your app**](#-what-it-can-measure) · [**Why tables disagree**](#why-published-tables-disagree)
+[Quick start](#quick-start) | [What it produced on one laptop](#what-it-produced-on-one-laptop) | [Supported software](#supported-software) | [Method](#method)
 
 </div>
 
 ---
 
-## 😵 The problem
+## The problem
 
-You want to type with your voice. You search, and you get a wall:
+Picking a dictation app should take ten minutes. You search and get a wall of options: Wispr Flow,
+the macOS built-in, Handy, FluidVoice, VoiceInk, Superwhisper, Hex, MacParakeet, OpenWhispr,
+WhisperKit, whisper.cpp. Most of them are good. Each has a benchmark table on its README or blog,
+and the tables disagree with each other about the same models.
 
-> **Wispr Flow** (paid, cloud) · **macOS built-in dictation** (free) · **Handy** · **FluidVoice** ·
-> **VoiceInk** · **Superwhisper** · **Hex** · **MacParakeet** · **OpenWhispr** ·
-> **WhisperKit** · **whisper.cpp** · **Parakeet** · **Moonshine** …
+Three things account for most of that disagreement, and each one changes the answer you would
+arrive at:
 
-Every one of them has a benchmark table somewhere. **None of those numbers were measured on your
-Mac**, with your microphone, in your room, with your accent. And the tables disagree with each
-other about the *same* models — sometimes by several points.
+1. **Scorers differ.** One table lowercases and strips punctuation. The next converts "twenty
+   twenty six" to "2026" on one side of the comparison only. The same pair of engines can swap
+   places.
+2. **"Speed" is not one number.** A model can hit 200x real time on a long file and still take
+   two seconds on the first phrase after launch, because the model is loading. What you notice is
+   the wait, and there are two different waits.
+3. **Small corpora make ties look like wins.** "1.9% vs 2.3%" on a 260-word test set is five
+   errors against six. Presented as a ranking, that reads far stronger than the evidence supports.
 
-That's not because everyone is lying. It's because of three things, all of which this tool fixes:
+## What it does
 
-1. **🧮 Accuracy is scored differently.** One benchmark lowercases and strips punctuation; the
-   next converts "twenty twenty six" to "2026" on only one side. **The same two engines can swap
-   places depending on the scorer.**
-2. **⏱️ "Speed" means different things.** "200× real time" can be true while the *first* phrase
-   after launch still takes two seconds. What you feel is **cold** (first phrase) and **warm**
-   (every phrase after).
-3. **🔤 The gap between the best models is often one word.** "1.9% vs 2.3%" is five errors vs
-   six on a small test set. Most tables present that as a winner.
-
-## 🧪 What this does
-
-`dictation-bench` runs **the software already installed on your machine**, with the *same audio*,
-the *same scoring*, in one afternoon — then hands you a table, a pros/cons list per app, and a
-recommendation that states what would change it.
+`dictation-bench` runs the software installed on this machine against one fixed audio set, with
+identical scoring for every candidate, and reports accuracy, both latencies, and the trade-offs. It
+takes a couple of minutes per engine.
 
 <div align="center">
-<img src="docs/assets/phrase-cost.svg" alt="Chart: time per dictation phrase. Resident servers take about 150 ms; Handy takes 0.8 to 2.0 s for the first phrase" width="820">
+<img src="docs/assets/phrase-cost.svg" alt="Time per dictation phrase. Resident servers answer in about 150 ms. Handy driven as a command takes 0.8 to 2.0 s for the first phrase." width="820">
 </div>
 
----
+## Quick start
 
-## ⚡ Quick start
-
-**Requirements:** Python 3.10+ and `sox` (`brew install sox`). No API keys, no account, no cloud.
+Python 3.10 or newer, plus `sox` (`brew install sox`). No API keys, no account, nothing leaves the
+machine.
 
 ```bash
 git clone https://github.com/jimaldon/dictation-bench && cd dictation-bench
-pip install -e ".[normalize]"      # [normalize] adds the Whisper-style scorer
-dictation-bench doctor             # what's installed on this machine, and what to try next
+pip install -e ".[normalize]"
+dictation-bench doctor
 ```
 
-Then point it at the apps you actually have:
+Then point it at two things you want to compare:
 
 ```bash
-# Measure a resident server and a CLI against each other
 dictation-bench bench --preset nemo-speech-server --preset whisper-cpp-cli
+```
 
-# Or write a bench.toml listing everything you want to compare
+Or list everything you care about in a `bench.toml`:
+
+```bash
 dictation-bench init && dictation-bench bench
 ```
 
-Open **`results/report.md`**. It takes about 1–3 minutes per engine.
+The result lands in `results/report.md`. Each engine gets a short pros and cons list, and the report
+ends with the recommendation and the reasons that would change it:
 
-```text
-✅ Resident (no reload per phrase)          ⚠️ Slow first phrase (1974 ms vs 353 ms): the model is
-✅ Offline (no network)                        loaded per invocation, so every relaunch pays once
-⚠️ Misreads numbers (35.9% on the numbers group)
+```
++ Resident (no reload per phrase)      ! Slow first phrase (1974 ms vs 353 ms): the model is
++ Offline (no network)                   loaded per invocation, so every relaunch pays this once
+! Misreads numbers (35.9% on the numbers group)
 ```
 
----
+## What it produced on one laptop
 
-## 🖥️ An example: what it produced on one laptop
-
-**Machine:** Apple M2 MacBook Air (Mac14,2) · 24 GB unified memory · macOS 26.7.1 · AC power
-**Corpus:** the 28 bundled clips (112.8 s) · 260 reference words for the headline score
-**Measured:** 2026-10-31, five systems installed side by side, run one after another
+Machine: Apple M2 MacBook Air, 24 GB, macOS 26.7.1, on AC power. Corpus: the 28 bundled clips
+(112.8 s), with 260 reference words in the headline score. Five systems installed side by side, run
+one after another on 2026-10-31.
 
 | System | How it ran | Everyday WER | Numbers | First phrase | Every phrase after |
 |:--|:--|--:|--:|--:|--:|
-| [NeMo-Speech.cpp](https://github.com/NVIDIA/NeMo-Speech.cpp) · [Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) | resident server (Metal) | **1.9%** | 17.2% | **137 ms** | **146 ms** |
-| [Hex 3.0.0](https://github.com/anomalyco/hex) · Parakeet v3 | resident service | **1.9%** | 17.2% | 163 ms | 161 ms |
-| [Handy](https://github.com/cjpais/Handy) · Parakeet Unified EN | app binary, batch | 2.3% | 35.9% | 839 ms | 130 ms |
-| [Handy](https://github.com/cjpais/Handy) · Parakeet TDT v3 | app binary, batch | 2.3% | 31.2% | 1288 ms | 235 ms |
-| [Handy](https://github.com/cjpais/Handy) · [Whisper small.en](https://huggingface.co/openai/whisper-small.en) | app binary, batch | 2.3% | 35.9% | 1974 ms | 353 ms |
+| [NeMo-Speech.cpp](https://github.com/NVIDIA/NeMo-Speech.cpp) with [Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) | resident server, Metal | **1.9%** | 17.2% | **137 ms** | **146 ms** |
+| [Hex 3.0.0](https://github.com/anomalyco/hex) with Parakeet v3 | resident service | **1.9%** | 17.2% | 163 ms | 161 ms |
+| [Handy](https://github.com/cjpais/Handy) with Parakeet Unified EN | app binary, batch mode | 2.3% | 35.9% | 839 ms | 130 ms |
+| [Handy](https://github.com/cjpais/Handy) with Parakeet TDT v3 | app binary, batch mode | 2.3% | 31.2% | 1288 ms | 235 ms |
+| [Handy](https://github.com/cjpais/Handy) with [Whisper small.en](https://huggingface.co/openai/whisper-small.en) | app binary, batch mode | 2.3% | 35.9% | 1974 ms | 353 ms |
 
 <div align="center">
-<img src="docs/assets/accuracy.svg" alt="Chart: everyday WER is a tie at about 2 percent across all five; the numbers group splits them" width="820">
+<img src="docs/assets/accuracy.svg" alt="Everyday word error rate is about 2 percent for all five systems. The numbers group separates them: 17 percent for the two resident servers, 31 to 36 percent for Handy." width="820">
 </div>
 
-### 🧠 What that table actually says
+Reading the table: everyday accuracy is a tie. NeMo-Speech and Hex miss five words out of 260, the
+three Handy configurations miss six. I would not pick between them on that.
 
-> **On everyday dictation, all five are the same.** 5 errors vs 6 errors out of 260 words —
-> a one-word difference. Anyone claiming a winner here is claiming noise.
->
-> **The real differences are numbers and waiting.** Two systems (NeMo-Speech, Hex) handle written
-> numbers correctly, where Handy's models mangle them (31–36% error on the numbers group). And the
-> two resident servers answer in **~150 ms**, while Handy driven as a command costs **0.8–2.0 s**
-> because it reloads the model each time — inside the app the model stays loaded, and it feels like
-> the others.
->
-> **So the decision is not "which model".** It's: do you want a menu-bar app you click (Handy), or
-> a resident server you bind to a key (NeMo-Speech, Hex)? And either way — run it yourself, because
-> your M1/M4 and your microphone will move these numbers.
+The two differences that hold up are written numbers and waiting. The resident setups get 17.2%
+wrong on the numbers group; Handy's models land between 31 and 36%. Handy's warm column comes from
+its internal inference timer and excludes the model load, but the cold column is real wall time, so
+the 0.8 to 2.0 s first phrase stands. Inside the app the model stays loaded and that first phrase
+should feel like the others. I did not verify that by driving the GUI, so treat it as the expected
+behaviour of a resident app rather than a measurement.
 
-📄 The full unedited report, with per-group accuracy, 95% ranges and per-engine pros/cons:
-**[examples/report-m2-macbook-air.md](examples/report-m2-macbook-air.md)**
+So the choice comes down mostly to shape: a menu bar app you click, or a server you bind to a key
+and keep running. Accuracy does not settle it and neither does speed once the model is warm.
 
-> ⚠️ **Read it with this caveat:** Handy's "every phrase after" is its *internal inference timer*,
-> not wall time — the report says so in its own "Before you trust this" section. That is exactly
-> the kind of thing the tool surfaces instead of hiding.
+The full report, unedited, with per-group accuracy, 95% ranges and the per-engine pros and cons:
+[examples/report-m2-macbook-air.md](examples/report-m2-macbook-air.md).
 
----
+One caveat carries over from that report. Handy's "every phrase after" is its internal inference
+timer, not wall time, and the report says so in its own "Before you trust this" section. That is the
+kind of thing this tool is meant to surface rather than hide.
 
-## 🔌 What it can measure
+## Supported software
 
-`dictation-bench` doesn't have a plugin per app. It has **four ways in**, which between them reach
-almost every local dictation product — open source or not, free or paid:
+There is no plugin per app. There are four ways in, which between them cover most local dictation
+software, open source or not:
 
-| Your software gives you… | `type` | Examples |
+| What your software exposes | `type` | Examples |
 |:--|:--|:--|
-| An OpenAI-compatible endpoint (`POST /v1/audio/transcriptions`) | `http` | whisper.cpp server, WhisperKit server, NeMo-Speech, faster-whisper-server, LM Studio |
+| An OpenAI-compatible `POST /v1/audio/transcriptions` | `http` | whisper.cpp server, WhisperKit server, NeMo-Speech, faster-whisper-server, LM Studio |
 | A command that prints text on stdout | `cli` | `whisper-cli`, `whisperkit-cli`, `moonshine`, `hns`, `parakeet.cpp` |
-| A command that prints JSON | `json-cli` | [Handy](https://github.com/cjpais/Handy)'s headless batch mode, [Hex](https://github.com/anomalyco/hex)'s service |
-| Anything scriptable at all | `custom` | a shell wrapper around a GUI-only app |
+| A command that prints JSON | `json-cli` | [Handy](https://github.com/cjpais/Handy)'s batch mode, [Hex](https://github.com/anomalyco/hex)'s service |
+| Anything you can script | `custom` | a wrapper around a GUI-only app |
 
-**A GUI-only app?** Many ship a hidden CLI or a local server (Handy does). If yours doesn't, wrap
-it with `type = "custom"` — the report marks those numbers as *your* claim, not ours.
-📖 Full guide: **[docs/adding-an-engine.md](docs/adding-an-engine.md)**
+Several GUI apps ship a hidden CLI or a local server; Handy does. Check `<app> --help` and
+`lsof -nP -iTCP -sTCP:LISTEN` before assuming there is nothing to drive. If there really is nothing,
+wrap the app with `type = "custom"` and the report will mark those numbers as yours rather than the
+project's. The full guide is [docs/adding-an-engine.md](docs/adding-an-engine.md).
 
-<details>
-<summary><b>Built-in presets</b> (click to expand)</summary>
+Presets included: whisper.cpp server and CLI, WhisperKit server and CLI, NeMo-Speech,
+faster-whisper-server, LM Studio, Moonshine, hns, parakeet.cpp, Handy. Run `dictation-bench engines`
+to list them, or see [examples/bench.example.toml](examples/bench.example.toml).
 
-whisper.cpp server · WhisperKit server · NeMo-Speech server · faster-whisper-server · LM Studio ·
-whisper.cpp CLI · WhisperKit CLI · hns · Moonshine · parakeet.cpp · Handy · custom
+## Your own voice and microphone
 
-Run `dictation-bench engines` to list them, or see [`examples/bench.example.toml`](examples/bench.example.toml).
-
-</details>
-
----
-
-## 🎤 Use your own voice and microphone
-
-The bundled corpus is synthetic speech — repeatable, but **cleaner than a real room**. The biggest
-accuracy factor is your microphone, and no public table can measure that. Three ways:
+The bundled corpus is synthetic and cleaner than any room. Your microphone probably matters more
+than your choice of model, and no published table can measure it. Three ways to fix that:
 
 ```bash
-# 1. Your own recording, as ground truth (best signal)
 dictation-bench corpus --from-clip my-voice.wav --ref "the exact words I said"
-
-# 2. Your own sentences, in a synthetic voice
 dictation-bench corpus --from-text-file my_sentences.txt --out corpus/mine
-
-# 3. The default corpus, plus a second person talking over you
 dictation-bench corpus --from-macos-say --pollute --out corpus/party
 ```
 
-Then `dictation-bench bench --corpus corpus/mine`. This is the part every other benchmark skips —
-and it's usually the reason your experience differs from the internet's.
+The third renders the default corpus with a second voice talking over you, which is where models
+that look identical on clean audio start to separate.
 
----
+## Building the stack instead of buying it
 
-## 🎯 The dictation stack, if you want to build one
+If no app fits, [docs/recipe/dictation.md](docs/recipe/dictation.md) has the minimal version this
+project came out of: one resident server under `launchd`, a shell script of about 150 lines, and
+whatever hotkey you already use. It is deliberately not an app.
 
-If no app gives you what you want — a hotkey from *your* window manager, no app window, a model
-that stays loaded — [docs/recipe/dictation.md](docs/recipe/dictation.md) has the minimal version
-this project grew out of: **one resident local server under `launchd`, one ~150-line shell script,
-your own hotkey.** Deliberately not an app. Copy it and keep your setup.
+## Method
 
----
+Every engine is scored three ways: naive, Whisper-style, and number-aware. The report prints all
+three, so you can see when the scorer is deciding the ranking rather than the software.
 
-## Why published tables disagree
+In the run above all three scorers agree, 5.9% and 9.6% on the same transcripts. That means the gap
+between those systems is real rather than a formatting artifact, which is only knowable because the
+scorer was tested instead of assumed. Where a scorer does move the numbers, the report shows by how
+much. Details, including why both sides are normalised identically, are in
+[docs/methodology.md](docs/methodology.md).
 
-The report scores every engine **three ways** — naive, Whisper-style, and number-aware — because
-the scorer alone can decide the ranking. It prints all three so you can see when that is happening.
-
-In [the example above](examples/report-m2-macbook-air.md#why-published-wer-numbers-disagree) all
-three scorers agree (5.9% / 9.6% for the same transcripts), meaning the difference between those
-systems is **real, not a formatting artefact**. That is a result too — and you only know it because
-the scorer was tested rather than assumed. Where a scorer *does* move the numbers, the report shows
-it and says by how much.
-
-Method, including why both sides are normalised identically: **[docs/methodology.md](docs/methodology.md)**.
-
-<details>
-<summary><b>How it measures</b> (click to expand)</summary>
-
-| Axis | What it does | Where it can mislead you |
+| Axis | What it measures | Where it can mislead |
 |:--|:--|:--|
-| **Accuracy** | WER on your corpus, three normalisers. Headline = everyday dictation (prose, jargon, long, background speech). | Synthetic speech is easy; small corpora make one word look like a trend. Both are printed. |
-| **First phrase (cold)** | First clip, engine not yet used: process start + model load + shader/ANE compile. | Includes one-time app start-up; a resident app you never quit skips it. |
-| **After that (warm)** | Median over the rest of the clips. | Engine time only — not audio capture or the paste keystroke. |
-| **Capabilities** | Declared per engine (partials, resident, vocabulary, offline). | *Declared, not measured.* The report never infers them. |
+| Accuracy | WER on your corpus, three normalisers. The headline covers prose, jargon, long clips and background speech. | Synthetic speech is easy, and small corpora make one word look like a trend. Both are printed. |
+| First phrase | First clip with the engine not yet used: process start, model load, shader compile. | Includes start-up that a long-running app never pays again. |
+| Every phrase after | Median over the remaining clips. | Engine time only, without audio capture or the paste keystroke. |
+| Capabilities | Declared per engine: partials, resident, vocabulary, offline. | Declared, not measured. The report does not infer them. |
 
-</details>
+## Limitations
 
----
+This is an engine benchmark, not a product review. It does not measure the interface, the price, the
+privacy policy, the licence or the support, and for many people those matter more than half a
+percent of word error rate. It cannot fairly drive a closed app's GUI. It measures one machine on
+one day, so treat the numbers as a comparison for you rather than a ranking of the world, and re-run
+after a model upgrade.
 
-## ⚠️ Honest limitations
+The default corpus is 28 clips and about 113 seconds, enough to separate engines that differ by
+whole points. It is not enough to rank engines that differ by one word, and the report says so when
+that happens.
 
-- **This is an engine benchmark, not a product review.** It measures transcription quality and
-  speed. UI, price, privacy policy, licensing, support and polish are not measured — and often
-  matter more than the last half percent of WER.
-- **It runs software you install.** It can't fairly drive a closed app's GUI; a product with no
-  CLI or server is out of reach unless you wrap it.
-- **One machine, one run.** Numbers are for *your* comparison. Re-run after a model upgrade.
-- **Small corpus by default.** 28 clips, ~113 s. Enough to separate engines that differ by points;
-  **not** enough to rank engines that differ by one word — and the report says so whenever
-  that happens.
+## Contributing
 
-## 🤝 Contributing
-
-Most valuable contributions, in order:
-
-1. **A preset for software you use** — especially the GUI apps people are actually choosing
-   between. A `[[engines]]` block plus one paragraph on how to start it.
-2. **Real recordings** (with permission, with their exact text) — the scarcest input in ASR.
-3. **A better normaliser rule**, with a test showing what it changes.
-
-Keep promises small: if a preset's capability claims aren't verified, say so in its `notes`.
+The most useful contributions, in order: a preset for software you actually use, especially the GUI
+apps people are choosing between; real recordings with their exact text, which is the scarcest input
+in speech recognition; and normaliser rules with a test that shows what they change.
 
 <details>
-<summary><b>Development</b></summary>
+<summary>Development</summary>
 
 ```bash
 pip install -e ".[dev]"
@@ -240,21 +200,13 @@ python -m pytest tests -q
 ruff check src tests
 ```
 
-Layout: `src/dictation_bench/{corpus,normalize,adapters,evaluate,runner,report,cli}.py`,
-`testdata/reference` (the bundled corpus), `docs/`, `scripts/dictbench-ptt`.
-CI runs the tests on Linux and macOS across Python 3.10–3.13, builds the wheel, and
-`shellcheck`s the script.
+Source lives in `src/dictation_bench`, the corpus in `testdata/reference`, the docs in `docs/`, and
+the dictation script in `scripts/dictbench-ptt`. CI runs on Linux and macOS for Python 3.10 through
+3.13, builds the wheel, and shellchecks the script.
 
 </details>
 
-## Privacy
-
-No telemetry, no accounts, no network calls except to the engine URL you configure (loopback by
-default). `results/` is git-ignored, so benchmarking your own voice doesn't get committed by accident.
-
 ## License
 
-[MIT](LICENSE) for this project's code. Your dictation software, models and corpora keep their own
-licences; this repository ships no models and redistributes no third-party software.
-
-<div align="center"><sub>If this saved you a week of app-hopping, ⭐ the repo — it's how the next person finds it.</sub></div>
+MIT for this project's code. The dictation software, models and corpora keep their own licences.
+This repository ships no models.
