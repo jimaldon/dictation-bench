@@ -34,8 +34,8 @@
   <key>ProcessType</key>
   <string>Interactive</string>
   <key>StandardOutPath</key>
-  <string>/tmp/dictbench-server.log</string>
+  <string>/tmp/dictation-bench-server.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/dictbench-server.log</string>
+  <string>/tmp/dictation-bench-server.log</string>
 </dict>
 </plist>
