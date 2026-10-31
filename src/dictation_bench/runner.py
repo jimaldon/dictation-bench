@@ -36,6 +36,10 @@ class EngineRun:
     error: str = ""
     results: dict[str, Result] = field(default_factory=dict)
     retries: int = 0
+    #: Name of the clip whose first attempt was the cold measurement.
+    cold_clip: str = ""
+    #: Wall time of that first attempt (0 when no cold measurement was made).
+    cold_s: float = 0.0
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +50,8 @@ class EngineRun:
             "ok": self.ok,
             "error": self.error,
             "retries": self.retries,
+            "cold_clip": self.cold_clip,
+            "cold_s": self.cold_s,
             "results": {
                 k: {"text": v.text, "ok": v.ok, "error": v.error,
                     "wall_s": v.wall_s, "load_s": v.load_s,
@@ -74,7 +80,9 @@ def machine_info() -> dict[str, Any]:
             mem = subprocess.run(["sysctl", "-n", "hw.memsize"],
                                  capture_output=True, text=True)
             if mem.stdout.strip().isdigit():
-                info["ram_gb"] = round(int(mem.stdout.strip()) / 1e9, 1)
+                # Binary GB: an "M2 / 24 GB" machine reports 24, matching how
+                # vendors and users describe it (25.8 GB would be decimal).
+                info["ram_gb"] = round(int(mem.stdout.strip()) / (1024 ** 3), 1)
         elif platform.system() == "Linux":
             for line in Path("/proc/cpuinfo").read_text().splitlines():
                 if line.startswith("model name"):
@@ -154,6 +162,9 @@ def run_engine(
             res = adapter.transcribe(clip.wav, cold=False)
         if not res.ok:
             run.retries += 0
+        if clip.name == cold_clip.name:
+            run.cold_clip = cold_clip.name
+            run.cold_s = res.wall_s
         run.results[clip.name] = res
         if not quiet:
             mark = "✓" if res.ok else "✗"
@@ -185,16 +196,18 @@ def percentiles(values: list[float], ps: tuple[float, ...] = (50, 90, 95)) -> di
 def latency_summary(run: EngineRun, corpus: Corpus) -> dict[str, float]:
     """Cold: first clip. Warm: everything else. Plus per-second-of-audio cost."""
     by_name = {c.name: c for c in corpus.clips}
-    cold = None
+    # The cold clip is recorded once, explicitly, because Result.cold is the
+    # per-call flag (always True for the first call), not "this is the cold
+    # measurement". Reading it here used to make cold_s always NaN.
+    cold = run.cold_s if run.cold_s > 0 else None
     warm: list[tuple[float, float]] = []
     for name, res in run.results.items():
         clip = by_name.get(name)
         if clip is None or not res.ok:
             continue
-        if res.cold:
-            cold = res.wall_s
-        elif res.wall_s > 0:
-            warm.append((res.wall_s, clip.duration_s))
+        if name == run.cold_clip or res.wall_s <= 0:
+            continue
+        warm.append((res.wall_s, clip.duration_s))
     warm_only = [w for w, _d in warm]
     stats = {
         "cold_s": cold if cold is not None else float("nan"),

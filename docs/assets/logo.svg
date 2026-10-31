@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="150" viewBox="0 0 720 150" font-family="ui-sans-serif,-apple-system,'Segoe UI',Roboto,Helvetica,Arial" role="img" aria-label="dictation-bench">
+  <defs>
+    <rect id="plate" width="720" height="150" rx="18" fill="#0d1117"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3fb950"/>
+      <stop offset="100%" stop-color="#2f81f7"/>
+    </linearGradient>
+  </defs>
+
+  <use href="#plate"/>
+  <rect x="1" y="1" width="718" height="148" rx="17" fill="none" stroke="#30363d"/>
+  <!-- microphone icon -->
+  <g transform="translate(28,28)">
+    <rect x="34" y="8" width="46" height="76" rx="23" fill="url(#g)"/>
+    <path d="M18 56 a39 39 0 0 0 78 0" fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round"/>
+    <line x1="57" y1="101" x2="57" y2="112" stroke="url(#g)" stroke-width="9" stroke-linecap="round"/>
+    <!-- ruler ticks = benchmark -->
+    <g stroke="#8b949e" stroke-width="4" stroke-linecap="round">
+      <line x1="100" y1="24" x2="112" y2="24"/>
+      <line x1="100" y1="40" x2="108" y2="40"/>
+      <line x1="100" y1="56" x2="116" y2="56"/>
+      <line x1="100" y1="72" x2="108" y2="72"/>
+      <line x1="100" y1="88" x2="112" y2="88"/>
+    </g>
+  </g>
+
+  <text x="186" y="80" fill="#e6edf3" font-size="46" font-weight="800" letter-spacing="-1">dictation<tspan fill="#3fb950">-</tspan>bench</text>
+  <text x="188" y="110" fill="#8b949e" font-size="17">Benchmark the dictation app you already installed.</text>
+</svg>

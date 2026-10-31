@@ -57,6 +57,13 @@ def sanity_checks(evs: list[EngineEval]) -> list[str]:
     slow_cli = [e for e in live
                 if e.kind == "cli" and (e.latency.get("cold_s") or 0) <
                 min((e.latency.get("warm_median_s") or 0), 1e9)]
+    for e in live:
+        if e.caps.get("warm_is_inference_only"):
+            warnings.append(
+                f"**{e.name}**: 'After that' is the engine's own inference timer, not wall "
+                f"time, and it excludes the model load each invocation pays. 'First phrase' "
+                f"is real wall time. Do not read the two columns as the same quantity."
+            )
     for e in slow_cli:
         warnings.append(
             f"**{e.name}** reports an internal inference time faster than its own "
@@ -442,6 +449,19 @@ def render_markdown(evs: list[EngineEval], corpus, *, title: str | None = None) 
     lines.append("_First phrase = you pressed the key with the model not loaded yet "
                  "(what a freshly launched app costs you). After that = every following "
                  "phrase. (—) means the number could not be measured._")
+    lines.append("")
+    lines.append("| Engine | Runs as | Shows words while speaking | Custom vocabulary |")
+    lines.append("|:--|:--|:-:|:-:|")
+    kind_label = {"http": "resident server", "cli": "command per phrase",
+                  "json-cli": "app / command per phrase", "custom": "custom command"}
+    for ev in evs:
+        if not ev.ok:
+            continue
+        runs = "resident server" if ev.caps.get("service") else kind_label.get(ev.kind, ev.kind)
+        lines.append(
+            f"| {ev.name} | {runs} | {'yes' if ev.caps.get('partials') else 'no'} | "
+            f"{'yes' if ev.caps.get('vocab') else 'no'} |"
+        )
     lines.append("")
 
     lines.append("## Accuracy in detail")

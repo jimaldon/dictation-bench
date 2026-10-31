@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="570" viewBox="0 0 880 570" font-family="ui-sans-serif,-apple-system,'Segoe UI',Roboto,Helvetica,Arial" role="img" aria-label="Time from releasing the key to text: resident servers about 150 ms; Handy 0.8 to 2 seconds on the first phrase">
+<rect width="100%" height="100%" fill="#0d1117"/>
+<text x="32" y="44" fill="#e6edf3" font-size="22" font-weight="700">The wait you actually feel</text>
+<text x="32" y="68" fill="#8b949e" font-size="13.5">Apple M2 MacBook Air · release the key → text is ready · lower is better</text>
+<rect x="300" y="92" width="13" height="13" rx="3" fill="#f0883e"/><text x="320" y="103" fill="#c9d1d9" font-size="12.5">first phrase (model not loaded yet)</text>
+<rect x="560" y="92" width="13" height="13" rx="3" fill="#3fb950"/><text x="580" y="103" fill="#c9d1d9" font-size="12.5">every phrase after</text>
+<text x="848" y="103" fill="#6e7681" font-size="11" text-anchor="end">2 s+</text>
+<text x="32" y="149" fill="#e6edf3" font-size="14" font-weight="600">NeMo-Speech · Parakeet TDT v3</text>
+<text x="32" y="167" fill="#6e7681" font-size="11.5">resident server</text>
+<rect x="300" y="136" width="18.7" height="17" rx="3" fill="#f0883e"/><text x="326.7" y="149" fill="#f0883e" font-size="12" font-weight="600">151 ms</text>
+<rect x="300" y="158" width="17.6" height="17" rx="3" fill="#3fb950"/><text x="325.6" y="171" fill="#3fb950" font-size="12" font-weight="600">142 ms</text>
+<text x="32" y="223" fill="#e6edf3" font-size="14" font-weight="600">Hex 3.0.0 · Parakeet v3</text>
+<text x="32" y="241" fill="#6e7681" font-size="11.5">resident server</text>
+<rect x="300" y="210" width="20.2" height="17" rx="3" fill="#f0883e"/><text x="328.2" y="223" fill="#f0883e" font-size="12" font-weight="600">163 ms</text>
+<rect x="300" y="232" width="19.9" height="17" rx="3" fill="#3fb950"/><text x="327.9" y="245" fill="#3fb950" font-size="12" font-weight="600">161 ms</text>
+<text x="32" y="297" fill="#e6edf3" font-size="14" font-weight="600">Handy · Parakeet Unified EN</text>
+<text x="32" y="315" fill="#6e7681" font-size="11.5">reloads the model</text>
+<rect x="300" y="284" width="103.9" height="17" rx="3" fill="#f0883e"/><text x="411.9" y="297" fill="#f0883e" font-size="12" font-weight="600">839 ms</text>
+<rect x="300" y="306" width="16.1" height="17" rx="3" fill="#3fb950"/><text x="324.1" y="319" fill="#3fb950" font-size="12" font-weight="600">130 ms</text>
+<text x="32" y="371" fill="#e6edf3" font-size="14" font-weight="600">Handy · Parakeet TDT v3</text>
+<text x="32" y="389" fill="#6e7681" font-size="11.5">reloads the model</text>
+<rect x="300" y="358" width="159.5" height="17" rx="3" fill="#f0883e"/><text x="467.5" y="371" fill="#f0883e" font-size="12" font-weight="600">1288 ms</text>
+<rect x="300" y="380" width="29.1" height="17" rx="3" fill="#3fb950"/><text x="337.1" y="393" fill="#3fb950" font-size="12" font-weight="600">235 ms</text>
+<text x="32" y="445" fill="#e6edf3" font-size="14" font-weight="600">Handy · Whisper small.en</text>
+<text x="32" y="463" fill="#6e7681" font-size="11.5">reloads the model</text>
+<rect x="300" y="432" width="244.4" height="17" rx="3" fill="#f0883e"/><text x="552.4" y="445" fill="#f0883e" font-size="12" font-weight="600">1974 ms</text>
+<rect x="300" y="454" width="43.7" height="17" rx="3" fill="#3fb950"/><text x="351.7" y="467" fill="#3fb950" font-size="12" font-weight="600">353 ms</text>
+<text x="32" y="518" fill="#8b949e" font-size="12.5">Same audio, same scorer, same machine. The difference is <tspan fill="#3fb950">whether the model stays loaded</tspan>.</text>
+</svg>
