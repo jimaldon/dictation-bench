@@ -9,7 +9,7 @@
 [![Platform](https://img.shields.io/badge/macOS%20and%20Linux-supported-lightgrey)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[Quick start](#quick-start) | [What it produced on one laptop](#what-it-produced-on-one-laptop) | [Supported software](#supported-software) | [Method](#method)
+[Quick start](#quick-start) | [Supported dictation software](#supported-software) | [Method](#method)
 
 </div>
 
