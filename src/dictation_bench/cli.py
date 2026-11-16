@@ -324,6 +324,8 @@ def _write_csv(evs, path: Path) -> None:
 
 def cmd_corpus(args: argparse.Namespace) -> int:
     out = Path(args.out or "corpus")
+    if args.record:
+        return _record(args, out)
     if args.from_macos_say:
         corpus = from_macos_say(out, voice=args.voice, rate=args.rate,
                                 only=set(args.only.split(",")) if args.only else None,
@@ -336,9 +338,63 @@ def cmd_corpus(args: argparse.Namespace) -> int:
             raise BenchError("--from-clip needs --ref with the text that was said")
         corpus = from_single_recording(Path(args.from_clip), args.ref, out)
     else:
-        raise BenchError("choose one: --from-macos-say, --from-text-file, --from-clip")
+        raise BenchError(
+            "choose one: --record, --from-macos-say, --from-text-file, --from-clip"
+        )
     print(f"\n✓ {len(corpus)} clips -> {out} (manifest: {out / 'manifest.tsv'})")
     return 0
+
+
+def _record(args: argparse.Namespace, out: Path) -> int:
+    """`corpus record`: prompt bank, microphone choice, then the guided loop."""
+    from .recorder import list_devices, list_prompts, run_interactive
+
+    if args.list_prompts:
+        print(list_prompts(_groups(args)))
+        return 0
+    if args.list_mics:
+        mics = list_devices()
+        if not mics:
+            print("No selectable microphones found (SoX will use the system default).")
+            return 0
+        for mic in mics:
+            print(f"{mic.index}\t{mic.name}")
+        return 0
+    if not sys.stdin.isatty():
+        prompts = _prompt_list(args)
+        from .recorder import prompt_indices
+
+        prompt_indices(prompts, args.count, _groups(args))
+        raise BenchError(
+            "recording is interactive and needs a terminal with a microphone. "
+            "For scripted corpora use --from-text-file or --from-clip."
+        )
+    prompts = _prompt_list(args)
+    if args.out is None and out.exists() and (out / "manifest.tsv").exists():
+        raise BenchError(
+            f"{out} already has a corpus. Record somewhere else with --out, so "
+            "existing clips are not overwritten."
+        )
+    run_interactive(
+        out,
+        groups=_groups(args),
+        count=args.count,
+        prompts=prompts,
+        freeform=args.freeform,
+        mic_index=args.mic,
+        default_group=args.group,
+    )
+    return 0
+
+
+def _groups(args: argparse.Namespace) -> list[str] | None:
+    return [g.strip() for g in args.groups.split(",") if g.strip()] if args.groups else None
+
+
+def _prompt_list(args: argparse.Namespace) -> list[str] | None:
+    if not args.prompt:
+        return None
+    return [p.strip() for p in args.prompt.split(",") if p.strip()]
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -430,8 +486,23 @@ def build_parser() -> argparse.ArgumentParser:
                     help="include private transcript text and raw error strings")
     sp.set_defaults(func=cmd_compare)
 
-    sp = sub.add_parser("corpus", help="build a test corpus (from macOS voices, a text file or your mic)")
+    sp = sub.add_parser("corpus", help="build a test corpus (from macOS voices, a text file, your mic or by recording)")
     sp.add_argument("--out")
+    sp.add_argument("--record", action="store_true",
+                    help="guided recording: prompt, record, replay, correct the text, keep")
+    sp.add_argument("--freeform", action="store_true",
+                    help="with --record: dictate your own text instead of reading prompts")
+    sp.add_argument("--count", type=int, default=10,
+                    help="with --record: how many clips (default: %(default)s)")
+    sp.add_argument("--groups", help="comma-separated prompt groups to record, e.g. main,jargon")
+    sp.add_argument("--group", default="main",
+                    help="default group for recorded clips (default: %(default)s)")
+    sp.add_argument("--prompt", help="with --record: comma-separated prompt ids, e.g. m01,n03")
+    sp.add_argument("--list", dest="list_prompts", action="store_true",
+                    help="with --record: list the prompt bank and exit")
+    sp.add_argument("--mic", type=int, help="with --record: microphone index")
+    sp.add_argument("--list-mics", action="store_true",
+                    help="with --record: list selectable microphones and exit")
     sp.add_argument("--from-macos-say", action="store_true")
     sp.add_argument("--from-text-file")
     sp.add_argument("--from-clip", help="a WAV/any-audio recording of your own voice")

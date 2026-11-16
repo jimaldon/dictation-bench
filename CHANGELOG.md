@@ -4,6 +4,24 @@ Notable changes to this project. Versioning follows semver once 1.0 is reached. 
 **results may not be comparable across minor versions**, so keep the `results.json` a report was
 generated from.
 
+## 0.3.0, 2026-11-15
+
+### Added
+
+- `dictation-bench corpus record --out corpus/mine`: a guided session that prompts a sentence,
+  records it, reports level and clipping, offers replay and re-record, asks for the exact words and
+  a group, then writes a corpus ready for `bench --corpus`.
+- A 32-prompt bank in five groups (`main`, `numeric`, `jargon`, `stress`, `long`) with permanent ids,
+  selectable with `--prompt` and `--groups`, and listable with `--list`.
+- `--freeform` to dictate your own text instead of reading prompts.
+- Microphone selection (`--list-mics`, `--mic`) on macOS via ffmpeg; SoX alone records from the
+  system default.
+- Per-take condition labels (room, background noise, microphone type) in `corpus.json` and
+  `conditions.json`, plus duration, peak/RMS level and clipped-sample counts.
+- Recording more clips later extends a corpus; existing clips are never overwritten in place, so a
+  past result keeps describing the audio it actually measured.
+- [The recording guide](docs/recording-your-own-corpus.md) and 21 recorder tests.
+
 ## 0.2.0, 2026-11-15
 
 ### Added

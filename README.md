@@ -76,6 +76,20 @@ ends with the recommendation and the reasons that would change it:
 ! Misreads numbers (35.9% on the numbers group)
 ```
 
+## Test your own voice, not a synthetic one
+
+The bundled corpus measures the models. To measure **your** microphone and the way you speak:
+
+```bash
+dictation-bench corpus record --out corpus/mine
+dictation-bench bench --corpus corpus/mine
+```
+
+Ten prompts, about two minutes: read each sentence, press Ctrl-C when you finish, listen back if you
+want, then confirm the exact words. The recorder reports clipping and quiet takes instead of
+"fixing" them, and keeps each take's room, noise and microphone type so a later accuracy change can
+be traced to the audio. See [docs/recording-your-own-corpus.md](docs/recording-your-own-corpus.md).
+
 ## Did an update make dictation worse?
 
 Keep the raw result from each run, then compare them after an app or model update:

@@ -17,3 +17,7 @@ class CorpusError(BenchError):
 
 class ComparisonError(BenchError):
     """Saved runs cannot be compared without misleading the user."""
+
+
+class PromptError(BenchError):
+    """The requested prompt selection does not exist."""
