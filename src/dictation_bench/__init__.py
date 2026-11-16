@@ -10,4 +10,4 @@ below are the pieces a contributor would touch:
 - ``app``        : the per-software measurement orchestration
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

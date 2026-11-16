@@ -16,8 +16,11 @@ from pathlib import Path
 
 from . import __version__
 from .adapters import make_engine
+from .compare import DEFAULT_RESAMPLES, compare_runs, load_result
+from .compare import render_markdown as render_comparison
 from .corpus import (
     MACOS_VOICES,
+    fingerprint,
     from_macos_say,
     from_single_recording,
     from_text_file,
@@ -225,10 +228,13 @@ def cmd_bench(args: argparse.Namespace) -> int:
     md = render_markdown(evs, corpus)
     (out_dir / "report.md").write_text(md, encoding="utf-8")
     raw = {
+        "schema_version": 1,
+        "tool": __version__,
         "machine": machine_info(),
         # Relative to the working directory: an absolute path in a shared
         # results file reveals the user's directory layout.
         "corpus": _display_path(corpus.root),
+        "corpus_fingerprint": fingerprint(corpus),
         "engines": [e.as_dict() for e in runs],
     }
     (out_dir / "results.json").write_text(json.dumps(raw, indent=2), encoding="utf-8")
@@ -243,6 +249,33 @@ def cmd_bench(args: argparse.Namespace) -> int:
 
         subprocess.run(["open" if sys.platform == "darwin" else "xdg-open",
                         str(out_dir / "report.md")])
+    return 0
+
+
+def cmd_compare(args: argparse.Namespace) -> int:
+    corpus_path = Path(args.corpus) if args.corpus else bundled_corpus()
+    corpus = load(corpus_path)
+    comparison = compare_runs(
+        load_result(Path(args.before)),
+        load_result(Path(args.after)),
+        corpus,
+        resamples=args.resamples,
+        include_private=args.show_transcripts,
+    )
+    if args.out:
+        out_dir = Path(args.out)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        md_path = out_dir / "comparison.md"
+        json_path = out_dir / "comparison.json"
+        md_path.write_text(render_comparison(comparison), encoding="utf-8")
+        json_path.write_text(
+            json.dumps(comparison, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+        )
+        print(f"Wrote {md_path} and {json_path}")
+    elif args.json:
+        print(json.dumps(comparison, indent=2, allow_nan=False))
+    else:
+        print(render_comparison(comparison), end="")
     return 0
 
 
@@ -384,6 +417,18 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--open", action="store_true", help="open the report afterwards")
     sp.add_argument("--quiet", action="store_true")
     sp.set_defaults(func=cmd_bench)
+
+    sp = sub.add_parser("compare", help="compare two saved results.json files")
+    sp.add_argument("before", help="earlier results.json")
+    sp.add_argument("after", help="later results.json")
+    sp.add_argument("--corpus", help="corpus used by both runs (default: bundled reference)")
+    sp.add_argument("--out", help="directory for comparison.md and comparison.json")
+    sp.add_argument("--json", action="store_true", help="print JSON instead of Markdown")
+    sp.add_argument("--resamples", type=int, default=DEFAULT_RESAMPLES,
+                    help="paired bootstrap resamples (default: %(default)s)")
+    sp.add_argument("--show-transcripts", action="store_true",
+                    help="include private transcript text and raw error strings")
+    sp.set_defaults(func=cmd_compare)
 
     sp = sub.add_parser("corpus", help="build a test corpus (from macOS voices, a text file or your mic)")
     sp.add_argument("--out")

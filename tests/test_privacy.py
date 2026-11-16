@@ -62,6 +62,7 @@ def test_results_json_contains_no_absolute_paths_or_hostname(tmp_path):
     )
     assert proc.returncode == 0, proc.stderr
     blob = (out / "results.json").read_text()
+    assert len(json.loads(blob)["corpus_fingerprint"]) == 64
     assert platform.node() not in blob
     assert str(Path.home()) not in blob
     assert "/Users/" not in blob

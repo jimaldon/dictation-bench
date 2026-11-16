@@ -76,6 +76,24 @@ ends with the recommendation and the reasons that would change it:
 ! Misreads numbers (35.9% on the numbers group)
 ```
 
+## Did an update make dictation worse?
+
+Keep the raw result from each run, then compare them after an app or model update:
+
+```bash
+dictation-bench bench --out results/before
+# update the app or change the model, then run exactly the same corpus again
+dictation-bench bench --out results/after
+dictation-bench compare results/before/results.json results/after/results.json \
+  --out results/upgrade
+```
+
+`comparison.md` shows everyday and all-clip WER, paired warm and cold latency, and every fixed,
+regressed or changed clip. The intervals come from a paired bootstrap over clips, so the uncertainty
+belongs to the actual before/after difference rather than two unrelated rankings. `comparison.json`
+contains the same facts for automation. See [docs/comparing-runs.md](docs/comparing-runs.md) for
+multi-engine runs, personal corpora, legacy files and the privacy defaults.
+
 ## What it produced on one laptop
 
 Machine: Apple M2 MacBook Air, 24 GB, macOS 26.7.1, on AC power. Corpus: the 28 bundled clips

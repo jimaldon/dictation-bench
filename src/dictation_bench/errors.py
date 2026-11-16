@@ -13,3 +13,7 @@ class AdapterError(BenchError):
 
 class CorpusError(BenchError):
     """The corpus is missing, malformed or incomplete."""
+
+
+class ComparisonError(BenchError):
+    """Saved runs cannot be compared without misleading the user."""

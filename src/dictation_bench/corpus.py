@@ -71,6 +71,27 @@ class Corpus:
 MANIFEST = "manifest.tsv"
 
 
+def fingerprint(corpus: Corpus) -> str:
+    """Stable identity for the exact audio, references, groups and clip names.
+
+    Results store this digest instead of embedding a private corpus path.  A
+    comparison can therefore reject runs whose inputs merely had the same clip
+    names but did not actually contain the same test.
+    """
+    digest = hashlib.sha256()
+    for clip in sorted(corpus.clips, key=lambda c: c.name):
+        digest.update(b"dictation-bench-corpus-v1\0")
+        for value in (clip.name, clip.group, clip.reference):
+            digest.update(value.encode("utf-8"))
+            digest.update(b"\0")
+        audio = hashlib.sha256()
+        with clip.wav.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                audio.update(chunk)
+        digest.update(audio.digest())
+    return digest.hexdigest()
+
+
 def load(root: Path) -> Corpus:
     root = Path(root)
     manifest = root / MANIFEST

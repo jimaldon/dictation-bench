@@ -4,6 +4,24 @@ Notable changes to this project. Versioning follows semver once 1.0 is reached. 
 **results may not be comparable across minor versions**, so keep the `results.json` a report was
 generated from.
 
+## 0.2.0, 2026-11-15
+
+### Added
+
+- `dictation-bench compare BEFORE/results.json AFTER/results.json` writes a Markdown and JSON
+  before/after report without re-running the engines.
+- Everyday and all-clip WER deltas, per-clip fixed/regressed/changed/failed outcomes, and paired
+  warm-latency comparisons with deterministic 95% clip-bootstrap intervals. Cold latency is shown
+  separately and invalid timings cannot become JSON `NaN` or infinity.
+- New result files carry a tool version and a SHA-256 fingerprint of clip names, groups, references
+  and audio. Corpus mismatches are rejected; 0.1.0 files remain usable with identity and filtered-
+  subset warnings, while unequal legacy clip sets are rejected rather than scored as false failures.
+- Multi-engine pairing by name, explicit pairing for two single-engine files, and warnings for
+  skipped engines, renamed engines, hardware changes and tool-version changes.
+- Per-clip transcripts and raw error strings are opt-in with `--show-transcripts`; default output
+  keeps personal speech out of comparison reports.
+- [The comparison guide](docs/comparing-runs.md) and 17 focused comparison tests.
+
 ## 0.1.0, 2026-10-31
 
 First public release. There is no earlier version to compare against, so this entry records what
