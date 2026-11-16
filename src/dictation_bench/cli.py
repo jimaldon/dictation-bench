@@ -252,6 +252,64 @@ def cmd_bench(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_e2e(args: argparse.Namespace) -> int:
+    return _run_e2e(args)
+
+
+def _run_e2e(args: argparse.Namespace) -> int:
+    from .e2e import audio_devices, blackhole_present, platform_name, preflight, run_clips
+    from .e2e import render_markdown as render_e2e
+
+    corpus = load(Path(args.corpus) if args.corpus else bundled_corpus())
+    clips = corpus.clips[: args.max_clips] if args.max_clips else corpus.clips
+    device = args.device or blackhole_present(audio_devices())
+    problems = preflight(
+        devices=audio_devices(),
+        platform_name=platform_name(),
+        app_installed=True,
+    )
+    if args.dry_run:
+        print("End-to-end latency plan (no audio played, no app driven):")
+        print(f"  clips           {len(clips)} from {corpus.root.name}")
+        print(f"  app under test  {args.app or '(not set)'}")
+        print(f"  virtual mic     {device or '(BlackHole not installed)'}")
+        print(f"  stop shortcut   {args.stop_keys}")
+        print(f"  editor          {args.editor}")
+        print(f"  timeout         {args.timeout:g} s per trial")
+        if problems:
+            print("\nThis machine cannot run a real measurement:")
+            for problem in problems:
+                print(f"  - {problem}")
+        return 0
+    if problems:
+        raise BenchError(
+            "end-to-end latency cannot run on this machine:\n- "
+            + "\n- ".join(problems)
+            + "\nUse `dictation-bench bench` for CLI engines on any OS."
+        )
+    if not args.app:
+        raise BenchError("--app is required: the name of the dictation app to test")
+    if not args.stop_keys:
+        raise BenchError("--stop-keys is required: the shortcut that ends recording")
+    print(f"Driving {args.app}: {len(clips)} clips, stop via {args.stop_keys}.")
+    print("Do not touch the keyboard or mouse until it finishes.")
+    run = run_clips(
+        [clip.wav for clip in clips],
+        device=device, stop_keys=args.stop_keys, editor_app=args.editor,
+        app=args.app, timeout_s=args.timeout,
+    )
+    out_dir = Path(args.out or "results/e2e")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "e2e.json").write_text(
+        json.dumps(run.as_dict(), indent=2, allow_nan=False) + "\n", encoding="utf-8"
+    )
+    md = render_e2e(run)
+    (out_dir / "e2e.md").write_text(md, encoding="utf-8")
+    print(f"\nWrote {out_dir}/e2e.md and {out_dir}/e2e.json")
+    print(md)
+    return 0
+
+
 def cmd_compare(args: argparse.Namespace) -> int:
     corpus_path = Path(args.corpus) if args.corpus else bundled_corpus()
     corpus = load(corpus_path)
@@ -485,6 +543,27 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--show-transcripts", action="store_true",
                     help="include private transcript text and raw error strings")
     sp.set_defaults(func=cmd_compare)
+
+    sp = sub.add_parser(
+        "e2e",
+        help="EXPERIMENTAL: end-to-end latency of a local dictation app (macOS)",
+        description="Measure recording-end to final-text latency for a GUI dictation "
+                    "app through a virtual microphone and a controlled editor.",
+    )
+    sp.add_argument("--app", help="name of the dictation app, as in /Applications")
+    sp.add_argument("--stop-keys", dest="stop_keys", default="cmd+`",
+                    help="shortcut that ends recording (default: %(default)s)")
+    sp.add_argument("--editor", default="TextEdit",
+                    help="controlled editor whose text is read (default: %(default)s)")
+    sp.add_argument("--device", help="virtual microphone name (default: BlackHole)")
+    sp.add_argument("--corpus")
+    sp.add_argument("--max-clips", type=int, default=0)
+    sp.add_argument("--timeout", type=float, default=12.0,
+                    help="seconds to wait for text per trial (default: %(default)s)")
+    sp.add_argument("--out")
+    sp.add_argument("--dry-run", action="store_true",
+                    help="print the plan and this machine's readiness, play nothing")
+    sp.set_defaults(func=cmd_e2e)
 
     sp = sub.add_parser("corpus", help="build a test corpus (from macOS voices, a text file, your mic or by recording)")
     sp.add_argument("--out")

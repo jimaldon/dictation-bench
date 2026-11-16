@@ -90,6 +90,21 @@ want, then confirm the exact words. The recorder reports clipping and quiet take
 "fixing" them, and keeps each take's room, noise and microphone type so a later accuracy change can
 be traced to the audio. See [docs/recording-your-own-corpus.md](docs/recording-your-own-corpus.md).
 
+## How long does the app actually make you wait?
+
+`bench` times engines. It cannot time *an app*: what you experience is the wait between releasing the
+key and words appearing in the app you were typing in. That is what the experimental harness
+measures, through a virtual microphone and a controlled editor:
+
+```bash
+dictation-bench e2e --dry-run                 # what this Mac is missing, plays nothing
+dictation-bench e2e --app Handy --stop-keys 'cmd+`'
+```
+
+Needs macOS with a GUI session, BlackHole 2ch and Accessibility permission — it drives the real app,
+so it cannot run in CI. Trials that never produce text are counted, not dropped. See
+[docs/end-to-end-latency.md](docs/end-to-end-latency.md).
+
 ## Did an update make dictation worse?
 
 Keep the raw result from each run, then compare them after an app or model update:

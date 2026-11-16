@@ -4,6 +4,26 @@ Notable changes to this project. Versioning follows semver once 1.0 is reached. 
 **results may not be comparable across minor versions**, so keep the `results.json` a report was
 generated from.
 
+## 0.4.0, 2026-11-15
+
+### Added
+
+- `dictation-bench e2e`, an **experimental** macOS harness that measures what a person waits:
+  recording end to final text in a controlled editor, with a real app, a virtual microphone and
+  Accessibility. Separate from `bench` because the numbers are not reproducible in CI.
+- Settlement-based timing: text counts as final only after it stops changing, so streaming partials
+  are not mistaken for the answer. Trials that never produce text are recorded as `no_text` or
+  `timeout` and counted in the report instead of being dropped.
+- `--dry-run` that lists every unmet precondition (macOS, BlackHole 2ch, Accessibility, a named app)
+  instead of producing a number that cannot be reproduced.
+- [The end-to-end latency guide](docs/end-to-end-latency.md) and 18 tests covering settlement,
+  failure accounting, preflight and report privacy.
+
+### Notes
+
+- On a machine without BlackHole the command refuses with instructions; it never fabricates a
+  measurement. The GUI driver itself is not exercised by the test suite.
+
 ## 0.3.0, 2026-11-15
 
 ### Added
